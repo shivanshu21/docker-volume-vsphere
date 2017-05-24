@@ -30,15 +30,20 @@ import (
 // CreateVolume is going to create vsphere docker volume with given name.
 func CreateVolume(ip, name string) (string, error) {
 	log.Printf("Creating volume [%s] on VM [%s]\n", name, ip)
+	return ssh.InvokeCommand(ip, dockercli.CreateVolume + " --name= " + name) 
+}
+
+// CreateVolumeWithOpts is going to create vsphere docker volume with given name.
+func CreateVolumeWithOpts(ip, name, opts string) (string, error) {
+	log.Printf("Creating volume [%s] on VM [%s]\n", name, ip)
 	return ssh.InvokeCommand(ip, dockercli.CreateVolume + " --name= " + name + " " + opts)
 }
 
 // AttachVolume - attach volume to container on given host
 func AttachVolume(ip, volName, containerName string) (string, error) {
 	log.Printf("Attaching volume [%s] on VM [%s]\n", volName, ip)
-	return ssh.InvokeCommand(ip, dockercli.RunContainer+"-d -rm -v "+volName+
-		":/vol1 --name "+containerName+
-		dockercli.TestContainer)
+	return ssh.InvokeCommand(ip, dockercli.RunContainer+"-d --rm -v "+volName+
+		":/vol1 --name "+containerName+ dockercli.TestContainer)
 }
 
 // AttachVolumeWithRestart - attach volume to container on given host
@@ -59,7 +64,7 @@ func DeleteVolume(ip, name string) (string, error) {
 
 // ListVolumes - runs the docker list volumes command and returns the
 // list
-func ListVolumes(ip string) []byte {
+func ListVolumes(ip string) (string, error) {
 	log.Printf("Listing volumes.")
 	return ssh.InvokeCommand(ip, dockercli.ListVolumes)
 }

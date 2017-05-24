@@ -43,12 +43,6 @@ var (
 	containerName    string
 )
 
-func TestMain(m *testing.M) {
-	retCode := m.Run()
-	teardownFunction()
-	os.Exit(retCode)
-}
-
 // clean-up function
 func teardownFunction() {
 	ssh.InvokeCommand(vmIP, dockerVolmRmvCmd)

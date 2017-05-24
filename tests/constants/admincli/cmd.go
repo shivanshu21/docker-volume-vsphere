@@ -46,8 +46,8 @@ const (
 	// where --name will be name of the vmgroup
 	ReplaceVMFromVMgroup = vmdkopsAdmin + "vmgroup vm replace --name="
 
-	// ModifyAccessForVolumeGroup Modify access perms on volume group
-	ModifyAccessForVolumeGroup = vmdkopsCLIVolumegroup + "access set --name "
+	// ModifyAccessForVmGroup Modify access perms on vmgroup
+	ModifyAccessForVmGroup = vmdkopsAdminVmGroup + "access set --name "
 
 	// DefaultVMgroup referring name of default vmgroup
 	DefaultVMgroup = "_DEFAULT "
@@ -70,4 +70,4 @@ const (
 
 	//RemoveVolumes option refers to removing all volumes from a vmgroup
 	RemoveVolumes = " --remove-volumes"
-)
+}
