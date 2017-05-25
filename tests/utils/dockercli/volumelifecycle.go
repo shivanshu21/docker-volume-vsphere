@@ -33,6 +33,12 @@ func CreateVolume(ip, name string) (string, error) {
 	return ssh.InvokeCommand(ip, dockercli.CreateVolume+"--name="+name)
 }
 
+// CreateVolumeWithOptions is going to create vsphere docker volume with given name.
+func CreateVolumeWithOptions(ip, name, options string) (string, error) {
+	log.Printf("Creating volume [%s] with options [%s] on VM [%s]\n", name, options, ip)
+	return ssh.InvokeCommand(ip, dockercli.CreateVolume+"--name="+name+" "+options)
+}
+
 // AttachVolume - attach volume to container on given host
 func AttachVolume(ip, volName, containerName string) (string, error) {
 	log.Printf("Attaching volume [%s] on VM [%s]\n", volName, ip)

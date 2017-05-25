@@ -12,20 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// A home to hold test constants related with vmdkops_admin cli.
+// This util is holding misc small functions for operations to be done using admincli on esx
 
 package admincli
 
-const (
-	// location of the vmdkops binary
-	vmdkopsAdmin = "/usr/lib/vmware/vmdkops/bin/vmdkops_admin.py "
+import (
+	"log"
 
-	// vmdkops_admin volume
-	vmdkopsAdminVolume = vmdkopsAdmin + "volume "
-
-	// ListVolumes referring to vmdkops_admin volume ls
-	ListVolumes = vmdkopsAdminVolume + "ls "
-
-	// CreatePolicy Create a policy
-	CreatePolicy = vmdkopsAdmin + " policy create "
+	"github.com/vmware/docker-volume-vsphere/tests/constants/admincli"
+	"github.com/vmware/docker-volume-vsphere/tests/utils/ssh"
 )
+
+// CreatePolicy creates a policy
+func CreatePolicy(ip, name, content string) (string, error) {
+	log.Printf("Creating policy [%s] with content [%s] on ESX [%s]\n", name, content, ip)
+	return ssh.InvokeCommand(ip, admincli.CreatePolicy+" --name "+name+" --content "+content)
+}
