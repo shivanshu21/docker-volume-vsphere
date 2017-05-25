@@ -14,7 +14,6 @@
 # limitations under the License.
 
 
-
 # The preffered choice to build the repo. Uses a docker image
 # with all dependencies installed.
 
@@ -140,6 +139,9 @@ else
     -e "ESX=$2" \
     -e "VM1=$3" \
     -e "VM2=$4" \
+    -e "DS1=$DS1" \
+    -e "VM1NAME=$VM1NAME" \
+    -e "VM2NAME=$VM2NAME" \
     -e "GOVC_INSECURE=$GOVC_INSECURE" \
     -e "GOVC_URL=$GOVC_URL" \
     -e "GOVC_USERNAME=$GOVC_USERNAME" \

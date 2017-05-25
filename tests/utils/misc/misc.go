@@ -19,6 +19,7 @@ package misc
 import (
 	"log"
 	"time"
+	. "gopkg.in/check.v1"
 )
 
 type getVMPowerStatus func(string) string
@@ -47,4 +48,19 @@ func WaitForExpectedState(fn getVMPowerStatus, vmName, expectedState string) boo
 	}
 	log.Printf("Timed out to poll status\n")
 	return false
+}
+// LogTestStart - Print a start log with given test name and
+// current time stamp
+func LogTestStart(c *C, testGroup string, testName string) {
+	c.Logf("START:%s %s", testGroup, testName, curTime())
+}
+
+// LogTestEnd - Print a stop log with given test name and
+// current time stamp
+func LogTestEnd(c *C, testGroup string, testName string) {
+	c.Logf("END:%s %s", testGroup, testName, curTime())
+}
+
+func curTime() string {
+	return time.Now().Format(time.UnixDate)
 }

@@ -46,12 +46,3 @@ func InvokeCommandLocally(cmd string) string {
 	return strings.TrimSpace(string(out[:]))
 }
 
-//ExecCmd method takes command and host and calls InvokeCommand
-//and then returns the output after converting to string
-func ExecCmd(hostName string, cmd string) (string, error) {
-	out, err := InvokeCommand(hostName, cmd)
-	if err != nil {
-		return "", err
-	}
-	return string(out[:]), nil
-}

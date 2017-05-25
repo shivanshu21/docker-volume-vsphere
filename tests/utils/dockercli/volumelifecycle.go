@@ -42,8 +42,14 @@ func CreateVolumeWithOpts(ip, name, opts string) (string, error) {
 // AttachVolume - attach volume to container on given host
 func AttachVolume(ip, volName, containerName string) (string, error) {
 	log.Printf("Attaching volume [%s] on VM [%s]\n", volName, ip)
-	return ssh.InvokeCommand(ip, dockercli.RunContainer+"-d --rm -v "+volName+
+	return ssh.InvokeCommand(ip, dockercli.RunContainer+" -d --rm -v "+volName+
 		":/vol1 --name "+containerName+ dockercli.TestContainer)
+}
+
+// InspectVolume - attach volume to container on given host
+func InspectVolume(ip, volName string) (string, error) {
+	log.Printf("Inspecting volume [%s] on VM [%s]\n", volName, ip)
+	return ssh.InvokeCommand(ip, dockercli.InspectVolume + volName)
 }
 
 // AttachVolumeWithRestart - attach volume to container on given host

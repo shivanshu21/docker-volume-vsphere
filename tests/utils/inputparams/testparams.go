@@ -22,6 +22,7 @@ import (
 	"os"
 	"strconv"
 	"time"
+	"math/rand"
 )
 
 var (
@@ -42,10 +43,10 @@ func init() {
 func GetVolumeName() string {
 	return volumeName
 }
-
 // GetVolumeNameWithTimeStamp prepares unique volume name by appending current time-stamp value
-func GetVolumeNameWithTimeStamp(volumeName string) string {
-	return volumeName + "_volume_" + strconv.FormatInt(time.Now().Unix(), 10)
+func GetVolumeNameWithTimeStamp(volName string) string {
+	return volName + "_volume_" + strconv.FormatInt(rand.Int63(), 10)
+	//return volName + "_volume_" + strconv.FormatInt(time.Now().Unix(), 10)
 }
 
 // GetContainerNameWithTimeStamp prepares unique container name by appending current time-stamp value

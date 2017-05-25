@@ -72,7 +72,7 @@ const (
 	RemoveContainer = docker + "rm -f "
 
 	// TestContainer test busybox container that keeps running
-	TestContainer = " busybox tail -f /dev/null "
+	TestContainer = " busybox tail /dev/null "
 
 	// QueryContainer checks whether container exists or not
 	QueryContainer = docker + "ps -aq --filter name="
