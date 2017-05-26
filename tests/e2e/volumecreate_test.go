@@ -46,12 +46,17 @@ func (s *VolumeCreateTestSuite) SetUpSuite(c *C) {
 }
 
 func (s *VolumeCreateTestSuite) SetUpTest(c *C) {
+	// clean the list of volumes created
 	s.volumeList = s.volumeList[:0]
 }
 
 func (s *VolumeCreateTestSuite) TearDownTest(c *C) {
+	volList := ""
 	for _, name := range s.volumeList {
-		out, err := dockercli.DeleteVolume(s.hostIP, name)
+		volList = volList + " " + name
+	}
+	if volList != "" {
+		out, err := dockercli.DeleteVolume(s.hostIP, volList)
 		c.Assert(err, IsNil, Commentf(out))
 	}
 }
@@ -67,6 +72,7 @@ var _ = Suite(&VolumeCreateTestSuite{})
 // 6. contains multiple '@'
 // 7. contains unicode character
 func (s *VolumeCreateTestSuite) TestValidName(c *C) {
+	log.Printf("START: VolumeCreateTestSuite.TestValidName")
 
 	s.volumeList = append(s.volumeList, inputparams.GetVolumeNameOfSize(100))
 	s.volumeList = append(s.volumeList, "Volume-0000000-****-###")
@@ -83,6 +89,8 @@ func (s *VolumeCreateTestSuite) TestValidName(c *C) {
 		isAvailable := verification.CheckVolumeAvailability(s.hostIP, name)
 		c.Assert(isAvailable, Equals, true, Commentf("Volume %s is not available after creation", name))
 	}
+
+	log.Printf("END: VolumeCreateTestSuite.TestValidName")
 }
 
 // Invalid volume names test
@@ -90,6 +98,8 @@ func (s *VolumeCreateTestSuite) TestValidName(c *C) {
 // 2. ending -NNNNNN (6Ns)
 // 3. contains @invalid datastore name
 func (s *VolumeCreateTestSuite) TestInvalidName(c *C) {
+	log.Printf("START: VolumeCreateTestSuite.TestInvalidName")
+
 	var invalidVolList []string
 
 	invalidVolList = append(invalidVolList, inputparams.GetVolumeNameOfSize(101))
@@ -100,6 +110,8 @@ func (s *VolumeCreateTestSuite) TestInvalidName(c *C) {
 		out, _ := dockercli.CreateVolume(s.hostIP, name)
 		c.Assert(strings.HasPrefix(out, ErrorVolumeCreate), Equals, true)
 	}
+
+	log.Printf("END: VolumeCreateTestSuite.TestInvalidName")
 }
 
 // Valid volume creation options
@@ -111,6 +123,8 @@ func (s *VolumeCreateTestSuite) TestInvalidName(c *C) {
 // 6. clone-from valid volume
 // 7. fstype xfs
 func (s *VolumeCreateTestSuite) TestValidOptions(c *C) {
+	log.Printf("START: VolumeCreateTestSuite.TestValidOptions")
+
 	var validVolOpts []string
 
 	validVolOpts = append(validVolOpts, " -o size=10gb")
@@ -150,6 +164,8 @@ func (s *VolumeCreateTestSuite) TestValidOptions(c *C) {
 	c.Assert(err, IsNil, Commentf(out))
 	isAvailable := verification.CheckVolumeAvailability(s.hostIP, xfsVolName)
 	c.Assert(isAvailable, Equals, true, Commentf("Volume %s is not available after creation", xfsVolName))
+
+	log.Printf("END: VolumeCreateTestSuite.TestValidOptions")
 }
 
 // Invalid volume create operations
@@ -159,6 +175,8 @@ func (s *VolumeCreateTestSuite) TestValidOptions(c *C) {
 // 4. Wrong access types
 // 5. Unavailable clone source
 func (s *VolumeCreateTestSuite) TestInvalidOptions(c *C) {
+	log.Printf("START: VolumeCreateTestSuite.TestInvalidOptions")
+
 	var invalidVolOpts []string
 
 	invalidVolOpts = append(invalidVolOpts, " -o diskformat=zeroedthickk")
@@ -178,4 +196,6 @@ func (s *VolumeCreateTestSuite) TestInvalidOptions(c *C) {
 		out, _ := dockercli.CreateVolumeWithOptions(s.hostIP, volName, option)
 		c.Assert(strings.HasPrefix(out, ErrorVolumeCreate), Equals, true)
 	}
+
+	log.Printf("END: VolumeCreateTestSuite.TestInvalidOptions")
 }

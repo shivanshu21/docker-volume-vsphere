@@ -21,6 +21,7 @@
 package e2e
 
 import (
+	"log"
 	"os"
 	"strings"
 
@@ -37,39 +38,35 @@ type VsanTestSuite struct {
 	hostIP     string
 	esxIP      string
 	vsanDSName string
-	volumeList []string
+	volumeName string
 }
 
 func (s *VsanTestSuite) SetUpSuite(c *C) {
 	s.hostIP = os.Getenv("VM2")
 	s.esxIP = os.Getenv("ESX")
-
-	dsNameList := govc.GetDatastoreList()
-	s.vsanDSName = ""
-	for _, ds := range dsNameList {
-		if strings.HasPrefix(ds, "vsan") {
-			s.vsanDSName = ds
-		}
-	}
-}
-
-func (s *VsanTestSuite) SetUpTest(c *C) {
-	s.volumeList = s.volumeList[:0]
+	s.vsanDSName = govc.GetVsanDatastore()
 }
 
 func (s *VsanTestSuite) TearDownTest(c *C) {
-	for _, name := range s.volumeList {
-		out, err := dockercli.DeleteVolume(s.hostIP, name)
-		c.Assert(err, IsNil, Commentf(out))
-	}
+	out, err := dockercli.DeleteVolume(s.hostIP, s.volumeName)
+	c.Assert(err, IsNil, Commentf(out))
 }
 
 var _ = Suite(&VsanTestSuite{})
 
+// Vsan related test
+// 1. Create a valid vsan policy
+// 2. Create an invalid vsan policy (wrong content)
+// 3. Volume creation with valid policy should pass
+// 4. Valid volume should be accessible
+// 5. Volume creation with non existing policy should fail
+// 6. Volume creation with invalid policy should fail
 func (s *VsanTestSuite) TestVSANPolicy(c *C) {
 	if s.vsanDSName == "" {
 		c.Skip("Vsan datastore unavailable")
 	}
+
+	log.Printf("START: VsanTestSuite.TestVSANPolicy")
 
 	policyName := "validPolicy"
 	out, err := admincli.CreatePolicy(s.esxIP, policyName, "'((\"proportionalCapacity\" i50)''(\"hostFailuresToTolerate\" i0))'")
@@ -79,19 +76,20 @@ func (s *VsanTestSuite) TestVSANPolicy(c *C) {
 	out, err = admincli.CreatePolicy(s.esxIP, invalidContentPolicyName, "'((\"wrongKey\" i50)'")
 	c.Assert(err, IsNil, Commentf(out))
 
-	volName := inputparams.GetVolumeNameWithTimeStamp("vsanVol") + "@" + s.vsanDSName
-	s.volumeList = append(s.volumeList, volName)
+	s.volumeName = inputparams.GetVolumeNameWithTimeStamp("vsanVol") + "@" + s.vsanDSName
 	vsanOpts := " -o vsan-policy-name=" + policyName
 
-	out, err = dockercli.CreateVolumeWithOptions(s.hostIP, volName, vsanOpts)
+	out, err = dockercli.CreateVolumeWithOptions(s.hostIP, s.volumeName, vsanOpts)
 	c.Assert(err, IsNil, Commentf(out))
-	isAvailable := verification.CheckVolumeAvailability(s.hostIP, volName)
-	c.Assert(isAvailable, Equals, true, Commentf("Volume %s is not available after creation", volName))
+	isAvailable := verification.CheckVolumeAvailability(s.hostIP, s.volumeName)
+	c.Assert(isAvailable, Equals, true, Commentf("Volume %s is not available after creation", s.volumeName))
 
 	invalidVsanOpts := [2]string{"-o vsan-policy-name=IDontExist", "-o vsan-policy-name=" + invalidContentPolicyName}
 	for _, option := range invalidVsanOpts {
-		volName = inputparams.GetVolumeNameWithTimeStamp("vsanVol") + "@" + s.vsanDSName
-		out, _ = dockercli.CreateVolumeWithOptions(s.hostIP, volName, option)
+		invalidVolName := inputparams.GetVolumeNameWithTimeStamp("vsanVol") + "@" + s.vsanDSName
+		out, _ = dockercli.CreateVolumeWithOptions(s.hostIP, invalidVolName, option)
 		c.Assert(strings.HasPrefix(out, ErrorVolumeCreate), Equals, true)
 	}
+
+	log.Printf("END: VsanTestSuite.TestVSANPolicy")
 }

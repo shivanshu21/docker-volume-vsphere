@@ -58,3 +58,9 @@ func GetDatastoreList() []string {
 	out := ssh.InvokeCommandLocally(cmd)
 	return strings.Fields(out)
 }
+
+func GetVsanDatastore() string {
+	cmd := govc.DatastoreInfo + govc.JSONTypeOutput + "| " + govc.JSONParser + " '.Datastores[].Summary | select(.Type==\"vsan\") | .Name'"
+	out := ssh.InvokeCommandLocally(cmd)
+	return out
+}
