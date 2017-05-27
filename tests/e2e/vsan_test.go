@@ -66,7 +66,7 @@ func (s *VsanTestSuite) TestVSANPolicy(c *C) {
 		c.Skip("Vsan datastore unavailable")
 	}
 
-	log.Printf("START: VsanTestSuite.TestVSANPolicy")
+	log.Printf("START: vsan_test.TestVSANPolicy")
 
 	policyName := "validPolicy"
 	out, err := admincli.CreatePolicy(s.esxIP, policyName, "'((\"proportionalCapacity\" i50)''(\"hostFailuresToTolerate\" i0))'")
@@ -91,5 +91,5 @@ func (s *VsanTestSuite) TestVSANPolicy(c *C) {
 		c.Assert(strings.HasPrefix(out, ErrorVolumeCreate), Equals, true)
 	}
 
-	log.Printf("END: VsanTestSuite.TestVSANPolicy")
+	log.Printf("END: vsan_test.TestVSANPolicy")
 }

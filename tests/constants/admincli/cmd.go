@@ -28,4 +28,7 @@ const (
 
 	// CreatePolicy Create a policy
 	CreatePolicy = vmdkopsAdmin + " policy create "
+
+	// SetVolumeAccess set volume access
+	SetVolumeAccess = vmdkopsAdminVolume + " set "
 )

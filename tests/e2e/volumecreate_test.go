@@ -72,7 +72,7 @@ var _ = Suite(&VolumeCreateTestSuite{})
 // 6. contains multiple '@'
 // 7. contains unicode character
 func (s *VolumeCreateTestSuite) TestValidName(c *C) {
-	log.Printf("START: VolumeCreateTestSuite.TestValidName")
+	log.Printf("START: volumecreate_test.TestValidName")
 
 	s.volumeList = append(s.volumeList, inputparams.GetVolumeNameOfSize(100))
 	s.volumeList = append(s.volumeList, "Volume-0000000-****-###")
@@ -90,7 +90,7 @@ func (s *VolumeCreateTestSuite) TestValidName(c *C) {
 		c.Assert(isAvailable, Equals, true, Commentf("Volume %s is not available after creation", name))
 	}
 
-	log.Printf("END: VolumeCreateTestSuite.TestValidName")
+	log.Printf("END: volumecreate_test.TestValidName")
 }
 
 // Invalid volume names test
@@ -98,7 +98,7 @@ func (s *VolumeCreateTestSuite) TestValidName(c *C) {
 // 2. ending -NNNNNN (6Ns)
 // 3. contains @invalid datastore name
 func (s *VolumeCreateTestSuite) TestInvalidName(c *C) {
-	log.Printf("START: VolumeCreateTestSuite.TestInvalidName")
+	log.Printf("START: volumecreate_test.TestInvalidName")
 
 	var invalidVolList []string
 
@@ -111,7 +111,7 @@ func (s *VolumeCreateTestSuite) TestInvalidName(c *C) {
 		c.Assert(strings.HasPrefix(out, ErrorVolumeCreate), Equals, true)
 	}
 
-	log.Printf("END: VolumeCreateTestSuite.TestInvalidName")
+	log.Printf("END: volumecreate_test.TestInvalidName")
 }
 
 // Valid volume creation options
@@ -123,7 +123,7 @@ func (s *VolumeCreateTestSuite) TestInvalidName(c *C) {
 // 6. clone-from valid volume
 // 7. fstype xfs
 func (s *VolumeCreateTestSuite) TestValidOptions(c *C) {
-	log.Printf("START: VolumeCreateTestSuite.TestValidOptions")
+	log.Printf("START: volumecreate_test.TestValidOptions")
 
 	var validVolOpts []string
 
@@ -165,7 +165,7 @@ func (s *VolumeCreateTestSuite) TestValidOptions(c *C) {
 	isAvailable := verification.CheckVolumeAvailability(s.hostIP, xfsVolName)
 	c.Assert(isAvailable, Equals, true, Commentf("Volume %s is not available after creation", xfsVolName))
 
-	log.Printf("END: VolumeCreateTestSuite.TestValidOptions")
+	log.Printf("END: volumecreate_test.TestValidOptions")
 }
 
 // Invalid volume create operations
@@ -175,7 +175,7 @@ func (s *VolumeCreateTestSuite) TestValidOptions(c *C) {
 // 4. Wrong access types
 // 5. Unavailable clone source
 func (s *VolumeCreateTestSuite) TestInvalidOptions(c *C) {
-	log.Printf("START: VolumeCreateTestSuite.TestInvalidOptions")
+	log.Printf("START: volumecreate_test.TestInvalidOptions")
 
 	var invalidVolOpts []string
 
@@ -197,5 +197,5 @@ func (s *VolumeCreateTestSuite) TestInvalidOptions(c *C) {
 		c.Assert(strings.HasPrefix(out, ErrorVolumeCreate), Equals, true)
 	}
 
-	log.Printf("END: VolumeCreateTestSuite.TestInvalidOptions")
+	log.Printf("END: volumecreate_test.TestInvalidOptions")
 }

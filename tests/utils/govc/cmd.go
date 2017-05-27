@@ -52,6 +52,7 @@ func PowerOnVM(vmName string) string {
 	return ssh.InvokeCommandLocally(cmd)
 }
 
+// GetDatastoreList returns a list of datastore names available
 func GetDatastoreList() []string {
 	log.Printf("Finding Datastores available on ESX")
 	cmd := govc.DatastoreInfo + govc.JSONTypeOutput + "| " + govc.JSONParser + govc.DatastoreList
@@ -59,8 +60,8 @@ func GetDatastoreList() []string {
 	return strings.Fields(out)
 }
 
+// GetVsanDatastore returns the name of vsan type datastore
 func GetVsanDatastore() string {
 	cmd := govc.DatastoreInfo + govc.JSONTypeOutput + "| " + govc.JSONParser + " '.Datastores[].Summary | select(.Type==\"vsan\") | .Name'"
-	out := ssh.InvokeCommandLocally(cmd)
-	return out
+	return ssh.InvokeCommandLocally(cmd)
 }
