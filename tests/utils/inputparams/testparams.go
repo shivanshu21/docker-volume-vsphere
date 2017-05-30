@@ -53,6 +53,11 @@ func GetContainerNameWithTimeStamp(containerName string) string {
 	return containerName + "_container_" + strconv.FormatInt(time.Now().Unix(), 10)
 }
 
+// GetServiceNameWithTimeStamp prepares unique service name by appending current time-stamp value
+func GetServiceNameWithTimeStamp(serviceName string) string {
+	return serviceName + "_service_" + strconv.FormatInt(time.Now().Unix(), 10)
+}
+
 // GetEndPoint1 returns first VM endpoint supplied through CLI
 func GetEndPoint1() string {
 	return endPoint1
