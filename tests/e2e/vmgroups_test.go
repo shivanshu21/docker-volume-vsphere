@@ -100,9 +100,9 @@ func (vg *VmGroupTest) TearDownTest(c *C) {
 }
 
 func (vg *VmGroupTest) vmgroupGetVolName(c *C) {
-	vg.volName1 = inputparams.GetVolumeNameWithTimeStamp(vmgroupsTest)
-	vg.volName2 = inputparams.GetVolumeNameWithTimeStamp(vmgroupsTest)
-	vg.volName3 = inputparams.GetVolumeNameWithTimeStamp(vmgroupsTest)
+	vg.volName1 = inputparams.GetNewVolumeName(vmgroupsTest)
+	vg.volName2 = inputparams.GetNewVolumeName(vmgroupsTest)
+	vg.volName3 = inputparams.GetNewVolumeName(vmgroupsTest)
 }
 
 // Tests to validate behavior with the __DEFAULT_ vmgroup.

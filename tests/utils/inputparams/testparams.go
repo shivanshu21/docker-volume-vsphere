@@ -45,8 +45,12 @@ func GetVolumeName() string {
 }
 // GetVolumeNameWithTimeStamp prepares unique volume name by appending current time-stamp value
 func GetVolumeNameWithTimeStamp(volName string) string {
+	return volName + "_volume_" + strconv.FormatInt(time.Now().Unix(), 10)
+}
+
+// GetVolumeName prepares unique volume name with a random generated number
+func GetNewVolumeName(volName string) string {
 	return volName + "_volume_" + strconv.FormatInt(rand.Int63(), 10)
-	//return volName + "_volume_" + strconv.FormatInt(time.Now().Unix(), 10)
 }
 
 // GetContainerNameWithTimeStamp prepares unique container name by appending current time-stamp value
