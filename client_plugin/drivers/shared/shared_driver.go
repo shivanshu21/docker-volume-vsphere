@@ -34,8 +34,10 @@ import (
 	"github.com/docker/go-plugins-helpers/volume"
 	"github.com/vmware/docker-volume-vsphere/client_plugin/drivers/utils"
 	"github.com/vmware/docker-volume-vsphere/client_plugin/utils/config"
+	"github.com/vmware/docker-volume-vsphere/client_plugin/utils/plugin_utils"
 	"github.com/vmware/docker-volume-vsphere/client_plugin/utils/refcount"
 	"strconv"
+	"strings"
 )
 
 // volStatus: Datatype for keeping status of a shared volume
@@ -352,8 +354,87 @@ func (d *VolumeDriver) Create(r volume.Request) volume.Response {
 // Remove - removes individual volume. Docker would call it only if is not using it anymore
 func (d *VolumeDriver) Remove(r volume.Request) volume.Response {
 	log.WithFields(log.Fields{"name": r.Name}).Info("Removing volume ")
+	var msg string
+	var volRecord VolumeMetadata
 
-	log.Errorf("VolumeDriver Remove to be implemented")
+	// Cannot remove volumes till plugin completely initializes
+	// because we don't know if it is being used or not
+	if d.RefCounts.IsInitialized() != true {
+		msg = fmt.Sprintf(plugin_utils.PluginInitError+" Cannot remove volume %s",
+			r.Name)
+		log.Error(msg)
+		return volume.Response{Err: msg}
+	}
+
+	// Docker is supposed to block 'remove' command if the volume is used.
+	// Check on the local refcount first
+	if d.GetRefCount(r.Name) != 0 {
+		msg = fmt.Sprintf("Remove failed: Containers on this host VM are still using volume %s.",
+			r.Name)
+		log.Error(msg)
+		return volume.Response{Err: msg}
+	}
+
+	// Check status, then global refcount
+	keys := []string{
+		etcdPrefixState + r.Name,
+		etcdPrefixGRef + r.Name,
+		etcdPrefixInfo + r.Name,
+	}
+	entries, err := d.readVolMetadata(keys)
+	if err != nil {
+		msg = fmt.Sprintf("Remove failed: Failed to read metadata for volume %s from KV store. %v",
+			r.Name, err)
+		log.Warningf(msg)
+		return volume.Response{Err: msg}
+	}
+	// Unmarshal Info key
+	err = json.Unmarshal([]byte(entries[InfoIdx].value), &volRecord)
+	if err != nil {
+		msg = fmt.Sprintf("Remove failed: Failed to unmarshal data. %v", err)
+		log.Warningf(msg)
+		return volume.Response{Err: msg}
+	}
+	// Every other state can be handled by global refcount value.
+	// Only check for Intermediate state as that could mean grefc wont
+	// remain 0 for very long.
+	if volStatus(entries[stateIdx].value) == volStateIntermediate {
+		msg = fmt.Sprintf("Remove failed: Volume metadata is being updated. Please try later.")
+		log.Warningf(msg)
+		return volume.Response{Err: msg}
+	}
+	grefc, _ := strconv.Atoi(entries[GRefIdx].value)
+	if grefc != 0 {
+		msg = fmt.Sprintf("Remove failed: Containers on other host VM are still using volume %s.",
+			r.Name)
+		msg += fmt.Sprintf(" Host VMs using this volume: %s",
+			strings.Join(volRecord.ClientList, ","))
+		return volume.Response{Err: msg}
+	}
+
+	// TODO Test and set status to Deleting
+	// test and set coming up in miao's PR
+	// Need a separate thread that will clean up volumes stuck in deleting state
+
+	// Delete internal volume
+	log.Infof("Attempting to delete internal volume for %s", r.Name)
+	internalVolname := internalVolumePrefix + r.Name
+	err = d.dockerd.VolumeRemove(context.Background(), internalVolname)
+	if err != nil {
+		msg = fmt.Sprintf("Failed to remove internal volume %s. Reason: %v", r.Name, err)
+		msg += fmt.Sprintf(" Check the status of the volumes belonging to driver %s", d.internalVolumeDriver)
+		log.Warningf(msg)
+		return volume.Response{Err: msg}
+	}
+
+	// Delete metadata associated with this volume
+	log.Infof("Attempting to delete volume metadata for %s", r.Name)
+	err = d.deleteVolMetadata(r.Name)
+	if err != nil {
+		msg = fmt.Sprintf("Failed to delete volume metadata for %s. Reason: %v", r.Name, err)
+		return volume.Response{Err: msg}
+	}
+
 	return volume.Response{Err: ""}
 }
 
