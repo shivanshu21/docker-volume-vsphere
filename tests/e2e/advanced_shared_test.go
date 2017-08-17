@@ -20,6 +20,7 @@
 package e2e
 
 import (
+        "strconv"
 	"github.com/vmware/docker-volume-vsphere/tests/utils/dockercli"
 	"github.com/vmware/docker-volume-vsphere/tests/utils/inputparams"
 	"github.com/vmware/docker-volume-vsphere/tests/utils/misc"
@@ -28,8 +29,6 @@ import (
 )
 
 const (
-        // Data that will be written to the test file in shared volume
-        data = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         // Name of the test file in shared volume
         testFileName = "test.txt"
 )
@@ -37,9 +36,8 @@ const (
 type AdvancedSharedTestSuite struct {
 	config          *inputparams.TestConfig
 	esx             string
-	mgr1            string
-	mgr2            string
-	mgr3            string
+	master          string
+	worker1         string
 	volName1        string
 	container1Name  string
 	container2Name  string
@@ -48,13 +46,12 @@ type AdvancedSharedTestSuite struct {
 func (s *AdvancedSharedTestSuite) SetUpSuite(c *C) {
 	s.config = inputparams.GetTestConfig()
 	if s.config == nil {
-		c.Skip("Unable to retrieve test config, skipping basic sharedtests")
+		c.Skip("Unable to retrieve test config, skipping advanced shared tests")
 	}
 
 	s.esx = s.config.EsxHost
-	s.mgr1 = inputparams.GetSwarmManager1()
-        s.mgr2 = inputparams.GetSwarmWorker1()
-        s.mgr3 = inputparams.GetSwarmWorker2()
+	s.master = inputparams.GetSwarmManager1()
+        s.worker1 = inputparams.GetSwarmWorker1()
 }
 
 func (s *AdvancedSharedTestSuite) SetUpTest(c *C) {
@@ -71,38 +68,66 @@ var _ = Suite(&AdvancedSharedTestSuite{})
 func (s *AdvancedSharedTestSuite) TestSharedVolumeLifecycle(c *C) {
 	misc.LogTestStart(c.TestName())
 
-	out, err := dockercli.CreateSharedVolume(s.mgr2, s.volName1)
+        data := []string{"QWERTYUIOP000000000000",
+                         "ASDFGHJKLL111111111111"}
+        // Create shared volume
+	out, err := dockercli.CreateSharedVolume(s.worker1, s.volName1)
 	c.Assert(err, IsNil, Commentf(out))
 
-	accessible := verification.CheckVolumeAvailability(s.mgr2, s.volName1)
+        // Check if the shared volume got created properly
+	accessible := verification.CheckVolumeAvailability(s.worker1, s.volName1)
 	c.Assert(accessible, Equals, true, Commentf("Volume %s is not available", s.volName1))
 
-        out, err = dockercli.AttachSharedVolume(s.mgr1, s.volName1, s.container1Name)
+        // Mount the volume on master
+        out, err = dockercli.AttachSharedVolume(s.master, s.volName1, s.container1Name)
         c.Assert(err, IsNil, Commentf(out))
 
-        out, err = dockercli.AttachSharedVolume(s.mgr2, s.volName1, s.container1Name)
-        c.Assert(err, IsNil, Commentf(out))
+        // Expect global refcount for this volume to be 1
+        out = verification.GetSharedVolumeGlobalRefcount(s.volName1, s.master)
+        grefc, _ := strconv.Atoi(out)
+        c.Assert(grefc, Equals, 1, Commentf("Expected volume global refcount to be 1, found %s", out))
+
+        // Mount the volume on worker
+        out, err = dockercli.AttachSharedVolume(s.worker1, s.volName1, s.container1Name)
+
+        // Expect global refcount for this volume to be 2
+        out = verification.GetSharedVolumeGlobalRefcount(s.volName1, s.master)
+        grefc, _ = strconv.Atoi(out)
+        c.Assert(grefc, Equals, 2, Commentf("Expected volume global refcount to be 2, found %s", out))
+
 
         // Try IO from both VMs and verify the written data
-        s.readWriteCheck(c, s.mgr1, s.mgr2)
-        s.readWriteCheck(c, s.mgr2, s.mgr1)
+        s.readWriteCheck(c, s.master, s.worker1, data[0])
+        s.readWriteCheck(c, s.worker1, s.master, data[1])
 
-        out, err = dockercli.RemoveContainer(s.mgr1, s.container1Name)
+        // Unmount shared volume from master
+        out, err = dockercli.RemoveContainer(s.master, s.container1Name)
         c.Assert(err, IsNil, Commentf(out))
 
-        out, err = dockercli.RemoveContainer(s.mgr2, s.container1Name)
+        // Expect global refcount for this volume to be 1
+        out = verification.GetSharedVolumeGlobalRefcount(s.volName1, s.master)
+        grefc, _ = strconv.Atoi(out)
+        c.Assert(grefc, Equals, 1, Commentf("Expected volume global refcount to be 1, found %s", out))
+
+        // Unmount shared volume from worker
+        out, err = dockercli.RemoveContainer(s.worker1, s.container1Name)
         c.Assert(err, IsNil, Commentf(out))
 
-        // delete the volume //<<<< Will uncomment after unmount() code is done
-	//out, err = dockercli.DeleteVolume(s.mgr3, s.volName1)
-	//c.Assert(err, IsNil, Commentf(out))
+        // Expect global refcount for this volume to be 0
+        out = verification.GetSharedVolumeGlobalRefcount(s.volName1, s.master)
+        grefc, _ = strconv.Atoi(out)
+        c.Assert(grefc, Equals, 0, Commentf("Expected volume global refcount to be 0, found %s", out))
+
+        // delete the volume // Will uncomment after unmount() code is done
+	out, err = dockercli.DeleteVolume(s.worker1, s.volName1)
+	c.Assert(err, IsNil, Commentf(out))
 
 	misc.LogTestEnd(c.TestName())
 }
 
 // readWriteCheck Writes data to shared volume from one VM and read from another.
 // Fails if the data is not identical.
-func (s *AdvancedSharedTestSuite) readWriteCheck(c *C, node1 string, node2 string) {
+func (s *AdvancedSharedTestSuite) readWriteCheck(c *C, node1 string, node2 string, data string) {
         out, err := dockercli.WriteToVolume(node1, s.volName1, s.container2Name, testFileName, data)
         c.Assert(err, IsNil, Commentf(out))
 

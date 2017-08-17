@@ -15,7 +15,7 @@
 // This test suite includes test cases to verify basic functionality
 // before upgrade for upgrade test
 
-// +build run11onceshared
+// +build runonceshared
 
 package e2e
 

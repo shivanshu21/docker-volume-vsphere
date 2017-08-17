@@ -14,7 +14,7 @@
 
 // This test is going to cover various volume creation test cases
 
-// +build run11onceshared
+// +build runonceshared
 
 package e2e
 
